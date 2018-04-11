@@ -1,17 +1,23 @@
-import * as P from './PDU';
-import { ReadStream as ReadStream } from './RWStream';
-import { readMessage as readMessage } from './Message';
+const P = require('./PDU');
+const {ReadStream} = require('./RWStream');
+const {readMessage} = require('./Message');
 
-function time () {
+function time() {
   return Math.floor(Date.now() / 1000);
 }
 
-export default class Connection extends require("net").Socket {
+class Connection extends require("net").Socket {
   constructor(host, port, options) {
+    super();
+    
     this.host = host;
     this.port = port;
     this.options = Object.assign({
-      hostAE : "", sourceAE : "OHIFDCM", maxPackageSize : 32768, idle : 60, reconnect : true
+      hostAE: "",
+      sourceAE: "OHIFDCM",
+      maxPackageSize: 32768,
+      idle: 60,
+      reconnect: true
     }, options);
 
     this.connected = false;
@@ -32,34 +38,34 @@ export default class Connection extends require("net").Socket {
     this.lastCommand = null;
     this.lastSent = null;
     this.lastGets = [];
-    super();
 
     //register hooks
     this.on("connect", this.ready);
     this.on("data", this.received);
     this.on("close", this.closed);
     this.on("error", this.error);
-    this.on("end", function(){
+    this.on("end", function() {
       if (this.intervalId) {
         clearInterval(this.intervalId);
-      }      
-      //console.log('ended');
+      }
+    //console.log('ended');
     })
     this.on("released", function() {
       this.end();
     });
-    this.on('aborted', function(){
+    this.on('aborted', function() {
       this.end();
     })
     this.on('message', function(pdvs) {
       this.receivedMessage(pdvs);
-    }); 
+    });
 
-    //this.pause();
+  //this.pause();
   }
 
   checkIdle() {
-    let current = time(), idl = this.options.idle;
+    let current = time(),
+      idl = this.options.idle;
     if (!this.lastReceived && (current - this.started >= idl)) {
       this.idleClose();
     } else if (this.lastReceived && (current - this.lastReceived >= idl)) {
@@ -84,12 +90,12 @@ export default class Connection extends require("net").Socket {
     this.started = time();
 
     let o = this;
-    this.intervalId = setInterval(function(){
+    this.intervalId = setInterval(function() {
       o.checkIdle();
     }, 3000);
 
     this.emit("init");
-    //this.startAssociationRequest();
+  //this.startAssociationRequest();
   }
 
   resetReceive() {
@@ -98,7 +104,7 @@ export default class Connection extends require("net").Socket {
 
   received(data) {
     let i = 0;
-    do {//if(this.receiving === null && data.readUInt8(0) > 60) console.log('too big', data.readUInt8(0));
+    do { //if(this.receiving === null && data.readUInt8(0) > 60) console.log('too big', data.readUInt8(0));
       data = this.process(data);
     } while (data !== null);
     this.lastReceived = time();
@@ -111,15 +117,18 @@ export default class Connection extends require("net").Socket {
         data = Buffer.concat([this.minRecv, data], this.minRecv.length + data.length);
         this.minRecv = null;
       }*/
-      
-      let stream = new ReadStream(data), type = stream.read(C.TYPE_UINT8);
-      stream.increment(1); 
-      let len = stream.read(C.TYPE_UINT32), cmp = data.length - 6;
+
+      let stream = new ReadStream(data),
+        type = stream.read(C.TYPE_UINT8);
+      stream.increment(1);
+      let len = stream.read(C.TYPE_UINT32),
+        cmp = data.length - 6;
       if (len > cmp) {
         this.receiving = data;
         this.receiveLength = len;
       } else {
-        let process = data, remaining = null;
+        let process = data,
+          remaining = null;
         if (len < cmp) {
           process = data.slice(0, len + 6);
           remaining = data.slice(len + 6, cmp + 6);
@@ -131,8 +140,8 @@ export default class Connection extends require("net").Socket {
         }
       }
     } else {
-      let newData = Buffer.concat([this.receiving, data], this.receiving.length + data.length), 
-          pduLength = newData.length - 6;
+      let newData = Buffer.concat([this.receiving, data], this.receiving.length + data.length),
+        pduLength = newData.length - 6;
 
       if (pduLength < this.receiveLength) {
         this.receiving = newData;
@@ -153,7 +162,8 @@ export default class Connection extends require("net").Socket {
   }
 
   interpret(stream) {
-    let pdatas = [], size = stream.size();
+    let pdatas = [],
+      size = stream.size();
     while (stream.offset < size) {
       let pdu = P.pduByStream(stream);
       if (pdu.is(C.ITEM_TYPE_PDU_ASSOCIATE_AC)) {
@@ -163,8 +173,9 @@ export default class Connection extends require("net").Socket {
             throw "Accepted presentation context not found";
           }
           this.negotiatedContexts[ctx.presentationContextID] = {
-            id : ctx.presentationContextID, transferSyntax : ctx.transferSyntaxesItems[0].transferSyntaxName,
-            abstractSyntax : requested.abstractSyntax
+            id: ctx.presentationContextID,
+            transferSyntax: ctx.transferSyntaxesItems[0].transferSyntaxName,
+            abstractSyntax: requested.abstractSyntax
           };
           let notfound = false;
           for (let service of this.services) {
@@ -195,7 +206,8 @@ export default class Connection extends require("net").Socket {
         pdvs = pdvs.concat(pdata.presentationDataValueItems);
       }
       this.pendingPDVs = null;
-      let i = 0, count = pdvs.length;
+      let i = 0,
+        count = pdvs.length;
       while (i < count) {
         if (!pdvs[i].isLast) {
           let j = i + 1;
@@ -215,10 +227,10 @@ export default class Connection extends require("net").Socket {
         } else {
           this.emit('message', pdvs[i++]);
         }
-      } 
+      }
     }
 
-    //this.release();
+  //this.release();
   }
 
   newMessageId() {
@@ -228,7 +240,7 @@ export default class Connection extends require("net").Socket {
   closed(had_error) {
     this.connected = false;
     console.log("Connection closed", had_error);
-    //this.destroy();
+  //this.destroy();
   }
 
   error(err) {
@@ -246,7 +258,7 @@ export default class Connection extends require("net").Socket {
     //console.log('SEND PDU-TYPE: ', pdu.type);
     let toSend = pdu.buffer();
     //console.log('send buffer', toSend.toString('hex'));
-    this.write(toSend, function(){
+    this.write(toSend, function() {
       //console.log('Data written');
     });
   }
@@ -261,7 +273,7 @@ export default class Connection extends require("net").Socket {
     if (!this.negotiatedContexts[contextId]) return null;
 
     return this.negotiatedContexts[contextId].id;
-  }  
+  }
 
   getContext(id) {
     for (let ctx of this.presentationContexts) {
@@ -271,12 +283,13 @@ export default class Connection extends require("net").Socket {
   }
 
   setPresentationContexts(uids) {
-    let contexts = [], id = 0;
+    let contexts = [],
+      id = 0;
     for (let uid of uids) {
       contexts.push({
-        id : ++id,
-        abstractSyntax : uid, 
-        transferSyntaxes : [C.IMPLICIT_LITTLE_ENDIAN, C.EXPLICIT_LITTLE_ENDIAN, C.EXPLICIT_BIG_ENDIAN]
+        id: ++id,
+        abstractSyntax: uid,
+        transferSyntaxes: [C.IMPLICIT_LITTLE_ENDIAN, C.EXPLICIT_LITTLE_ENDIAN, C.EXPLICIT_BIG_ENDIAN]
       });
     }
     this.presentationContexts = contexts;
@@ -284,7 +297,7 @@ export default class Connection extends require("net").Socket {
 
   verify() {
     this.setPresentationContexts([C.SOP_VERIFICATION]);
-    this.startAssociationRequest(function(){
+    this.startAssociationRequest(function() {
       //associated, we can release now
       this.release();
     });
@@ -292,7 +305,7 @@ export default class Connection extends require("net").Socket {
 
   release() {
     let releaseRQ = new P.ReleaseRQ();
-    this.send(releaseRQ);    
+    this.send(releaseRQ);
   }
 
   addService(service) {
@@ -301,8 +314,8 @@ export default class Connection extends require("net").Socket {
   }
 
   receivedMessage(pdv) {
-    let syntax = this.getSyntax(pdv.contextId), 
-        msg = readMessage(pdv.messageStream, pdv.type, syntax);
+    let syntax = this.getSyntax(pdv.contextId),
+      msg = readMessage(pdv.messageStream, pdv.type, syntax);
 
     if (msg.isCommand()) {
       this.lastCommand = msg;
@@ -326,7 +339,7 @@ export default class Connection extends require("net").Socket {
 
           if (msg.is(C.COMMAND_C_GET_RSP)) {
             if (!msg.getNumOfRemainingSubOperations()) {
-              if (this.lastGets && this.lastGets.length > 0) this.lastGets.shift(); 
+              if (this.lastGets && this.lastGets.length > 0) this.lastGets.shift();
             }
           }
         }
@@ -359,20 +372,21 @@ export default class Connection extends require("net").Socket {
         }
       } else {
         if (this.lastCommand.is(C.COMMAND_C_STORE_RQ)) {
-          let moveMessageId = this.lastCommand.getMoveMessageId(), useId = moveMessageId;
+          let moveMessageId = this.lastCommand.getMoveMessageId(),
+            useId = moveMessageId;
           if (!moveMessageId) {
             //kinda hacky but we know this c-store is came from a c-get
             if (this.lastGets.length > 0) {
               useId = this.lastGets[0];
             } else {
               throw "Where does this c-store came from?";
-            }            
+            }
           } else console.log('move ', moveMessageId);
           this.storeResponse(useId, msg);
         }
       }
     }
-  }  
+  }
 
   storeResponse(messageId, msg) {
     let rq = this.messages[messageId];
@@ -381,10 +395,11 @@ export default class Connection extends require("net").Socket {
       let status = rq.listener[2].call(this, msg);
       if (status !== undefined && status !== null && rq.command.store) {
         //store ok, ready to send c-store-rsp
-        let storeSr = rq.command.store, replyMessage = storeSr.replyWith(status);
+        let storeSr = rq.command.store,
+          replyMessage = storeSr.replyWith(status);
         replyMessage.setAffectedSOPInstanceUID(this.lastCommand.getSOPInstanceUID());
         replyMessage.setReplyMessageId(this.lastCommand.messageId);
-        this.sendMessage(replyMessage, null, null, storeSr);                  
+        this.sendMessage(replyMessage, null, null, storeSr);
       } else {
         throw "Missing store status";
       }
@@ -392,9 +407,10 @@ export default class Connection extends require("net").Socket {
   }
 
   sendMessage(command, dataset, listener, service) {
-    let syntax = this.getSyntax(service.contextID), 
-        cid = service.contextID,
-        messageId = this.newMessageId(), msgData = {};
+    let syntax = this.getSyntax(service.contextID),
+      cid = service.contextID,
+      messageId = this.newMessageId(),
+      msgData = {};
 
     if (listener) {
       if (typeof listener != 'object') {
@@ -403,8 +419,8 @@ export default class Connection extends require("net").Socket {
       msgData.listener = listener;
     }
 
-    let pdata = new P.PDataTF(), 
-        pdv = new P.PresentationDataValueItem(cid);
+    let pdata = new P.PDataTF(),
+      pdv = new P.PresentationDataValueItem(cid);
 
     command.setSyntax(C.IMPLICIT_LITTLE_ENDIAN);
     command.setContextId(service.contextUID);
@@ -425,13 +441,14 @@ export default class Connection extends require("net").Socket {
     this.send(pdata);
     if (dataset) {
       dataset.setSyntax(syntax);
-      let dsData = new P.PDataTF(), dPdv = new P.PresentationDataValueItem(cid);
+      let dsData = new P.PDataTF(),
+        dPdv = new P.PresentationDataValueItem(cid);
 
       dPdv.setMessage(dataset);
       dsData.setPresentationDataValueItems([dPdv]);
-      this.send(dsData);      
+      this.send(dsData);
     }
-  }  
+  }
 
   startAssociationRequest(callback) {
     if (callback) {
@@ -459,7 +476,8 @@ export default class Connection extends require("net").Socket {
 
     let contextItems = []
     for (let context of this.presentationContexts) {
-      let contextItem = new P.PresentationContextItem(), syntaxes = [];
+      let contextItem = new P.PresentationContextItem(),
+        syntaxes = [];
       for (let transferSyntax of context.transferSyntaxes) {
         let transfer = new P.TransferSyntaxItem();
         transfer.setTransferSyntaxName(transferSyntax);
@@ -476,8 +494,8 @@ export default class Connection extends require("net").Socket {
     associateRQ.setPresentationContextItems(contextItems);
 
     let maxLengthItem = new P.MaximumLengthItem(),
-        classUIDItem  = new P.ImplementationClassUIDItem(),
-        versionItem   = new P.ImplementationVersionNameItem();
+      classUIDItem = new P.ImplementationClassUIDItem(),
+      versionItem = new P.ImplementationVersionNameItem();
 
     classUIDItem.setImplementationClassUID(C.IMPLEM_UID);
     versionItem.setImplementationVersionName(C.IMPLEM_VERSION);
@@ -487,7 +505,7 @@ export default class Connection extends require("net").Socket {
     userInfo.setUserDataItems([maxLengthItem, classUIDItem, versionItem]);
 
     associateRQ.setUserInformationItem(userInfo);
-    
+
     this.send(associateRQ);
   }
 
@@ -495,3 +513,5 @@ export default class Connection extends require("net").Socket {
     this.transferSyntaxes = syntaxes;
   }
 }
+
+module.exports = Connection;

@@ -4,32 +4,54 @@ function isString(type) {
   if (type == C.TYPE_ASCII || type == C.TYPE_HEX) {
     return true;
   } else return false;
-};
+}
+;
 
-export function calcLength(type, value) {
+function calcLength(type, value) {
   let size = NaN;
   switch (type) {
-    case C.TYPE_HEX    : size = Buffer.byteLength(value, 'hex'); break;
-    case C.TYPE_ASCII  : size = Buffer.byteLength(value, 'ascii'); break;
-    case C.TYPE_UINT8  : size = 1; break;
-    case C.TYPE_UINT16 : size = 2; break;
-    case C.TYPE_UINT32 : size = 4; break;
-    case C.TYPE_FLOAT  : size = 4; break;
-    case C.TYPE_DOUBLE : size = 8; break;
-    case C.TYPE_INT8   : size = 1; break;
-    case C.TYPE_INT16  : size = 2; break;
-    case C.TYPE_INT32  : size = 4; break;    
-    default :break;
+    case C.TYPE_HEX:
+      size = Buffer.byteLength(value, 'hex');
+      break;
+    case C.TYPE_ASCII:
+      size = Buffer.byteLength(value, 'ascii');
+      break;
+    case C.TYPE_UINT8:
+      size = 1;
+      break;
+    case C.TYPE_UINT16:
+      size = 2;
+      break;
+    case C.TYPE_UINT32:
+      size = 4;
+      break;
+    case C.TYPE_FLOAT:
+      size = 4;
+      break;
+    case C.TYPE_DOUBLE:
+      size = 8;
+      break;
+    case C.TYPE_INT8:
+      size = 1;
+      break;
+    case C.TYPE_INT16:
+      size = 2;
+      break;
+    case C.TYPE_INT32:
+      size = 4;
+      break;
+    default:
+      break;
   }
   return size;
 }
 
-export class RWStream {
+class RWStream {
   constructor() {
     this.endian = C.BIG_ENDIAN;
   }
 
-  setEndian(endian) {   
+  setEndian(endian) {
     this.endian = endian;
   }
 
@@ -43,10 +65,10 @@ export class RWStream {
 
   getReadType(type) {
     return RWStream.reads[this.endian][type];
-  }  
+  }
 }
 
-export class WriteStream extends RWStream {
+class WriteStream extends RWStream {
   constructor() {
     super();
     this.defaultBufferSize = 512; //512 bytes
@@ -73,8 +95,8 @@ export class WriteStream extends RWStream {
   checkSize(length) {
     if (this.offset + length > this.rawBuffer.length) {
       // we need more size, copying old one to new buffer
-      let oldLength = this.rawBuffer.length, 
-          newBuffer = new Buffer(oldLength + length + (oldLength / 2));
+      let oldLength = this.rawBuffer.length,
+        newBuffer = new Buffer(oldLength + length + (oldLength / 2));
       this.rawBuffer.copy(newBuffer, 0, 0, this.contentSize);
       this.rawBuffer = newBuffer;
     }
@@ -82,7 +104,7 @@ export class WriteStream extends RWStream {
 
   writeToBuffer(type, value, length) {
     if (value === "" || value === null) return;
-    
+
     this.checkSize(length);
     this.rawBuffer[this.getWriteType(type)](value, this.offset);
     this.increment(length);
@@ -97,7 +119,8 @@ export class WriteStream extends RWStream {
   }
 
   writeString(string, type) {
-    let encoding = this.getEncoding(type), length = Buffer.byteLength(string, encoding);
+    let encoding = this.getEncoding(type),
+      length = Buffer.byteLength(string, encoding);
     this.rawBuffer.write(string, this.offset, length, encoding);
     this.increment(length);
   }
@@ -114,7 +137,7 @@ export class WriteStream extends RWStream {
   }
 }
 
-export class ReadStream extends RWStream {
+class ReadStream extends RWStream {
   constructor(buffer) {
     super();
     this.rawBuffer = buffer;
@@ -127,7 +150,7 @@ export class ReadStream extends RWStream {
 
   increment(add) {
     this.offset += add;
-  }  
+  }
 
   more(length) {
     let newBuf = this.rawBuffer.slice(this.offset, this.offset + length);
@@ -149,7 +172,7 @@ export class ReadStream extends RWStream {
     let value = this.rawBuffer[this.getReadType(type)](this.offset);
     this.increment(length);
     return value;
-  }  
+  }
 
   read(type, length) {
     let value = null;
@@ -163,11 +186,11 @@ export class ReadStream extends RWStream {
   }
 
   readString(length, type) {
-    let encoding = this.getEncoding(type), 
-        str = this.rawBuffer.toString(encoding, this.offset, this.offset + length);
+    let encoding = this.getEncoding(type),
+      str = this.rawBuffer.toString(encoding, this.offset, this.offset + length);
     this.increment(length);
     return str;
-  }  
+  }
 
   buffer() {
     return this.rawBuffer;
@@ -178,7 +201,7 @@ export class ReadStream extends RWStream {
     this.rawBuffer = Buffer.concat([this.buffer(), newStream.buffer()], newSize);
     this.contentSize = newSize;
     this.offset = newSize;
-  }  
+  }
 }
 
 RWStream.writes = {};
@@ -198,7 +221,7 @@ RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_UINT16] = "writeUInt16LE";
 RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_UINT32] = "writeUInt32LE";
 RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_INT8] = "writeInt8";
 RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_INT16] = "writeInt16LE";
-RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_INT32] = "writeInt32LE"; 
+RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_INT32] = "writeInt32LE";
 RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_FLOAT] = "writeFloatLE";
 RWStream.writes[C.LITTLE_ENDIAN][C.TYPE_DOUBLE] = "writeDoubleLE";
 
@@ -226,3 +249,10 @@ RWStream.reads[C.LITTLE_ENDIAN][C.TYPE_DOUBLE] = "readDoubleLE";
 RWStream.encodings = {};
 RWStream.encodings[C.TYPE_HEX] = "hex";
 RWStream.encodings[C.TYPE_ASCII] = "ascii";
+
+module.exports = {
+  RWStream,
+  ReadStream,
+  WriteStream,
+  calcLength
+};

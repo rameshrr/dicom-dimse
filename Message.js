@@ -1,6 +1,6 @@
-import * as D from './Data'
+const D = require('./Data');
 
-export class DicomMessage {
+class DicomMessage {
   constructor(syntax) {
     this.syntax = syntax ? syntax : null;
     this.type = C.DATA_TYPE_COMMAND;
@@ -17,7 +17,7 @@ export class DicomMessage {
 
     for (var tag in this.elementPairs) {
       this.elementPairs[tag].setSyntax(this.syntax);
-    }  
+    }
   }
 
   setMessageId(id) {
@@ -57,7 +57,7 @@ export class DicomMessage {
 
     cmds.unshift(this.newElement(0x00000000, length));
     return cmds;
-  }  
+  }
 
   setElements(pairs) {
     let p = {};
@@ -65,7 +65,7 @@ export class DicomMessage {
       p[tag] = this.newElement(tag, pairs[tag]);
     }
     this.elementPairs = p;
-  }  
+  }
 
   newElement(tag, value) {
     return D.elementByType(tag, value, this.syntax);
@@ -97,7 +97,7 @@ export class DicomMessage {
 
   haveData() {
     return this.dataSetPresent;
-  }  
+  }
 
   tags() {
     return Object.keys(this.elementPairs);
@@ -113,7 +113,7 @@ export class DicomMessage {
 
   affectedSOPClassUID() {
     return this.getValue(0x00000002);
-  }  
+  }
 
   getMessageId() {
     return this.getValue(0x00000110);
@@ -125,7 +125,7 @@ export class DicomMessage {
       eles.push(this.elementPairs[tag]);
     }
     return eles;
-  }  
+  }
 
   length(elems) {
     let len = 0;
@@ -141,7 +141,7 @@ export class DicomMessage {
 
   is(type) {
     return this.commandType == type;
-  }  
+  }
 
   write(stream) {
     let fields = this.getFields();
@@ -164,7 +164,7 @@ export class DicomMessage {
             typeName += "[" + p + "]";
           }
         }
-        if (typeName[typeName.length-1] != "\n") {
+        if (typeName[typeName.length - 1] != "\n") {
           typeName += "\n";
         }
       } else {
@@ -180,15 +180,31 @@ export class DicomMessage {
       typeName = "DateSet Message";
     } else {
       switch (this.commandType) {
-        case C.COMMAND_C_GET_RSP   : typeName = "C-GET-RSP"; break;
-        case C.COMMAND_C_MOVE_RSP  : typeName = "C-MOVE-RSP"; break;
-        case C.COMMAND_C_GET_RQ    : typeName = "C-GET-RQ"; break;
-        case C.COMMAND_C_STORE_RQ  : typeName = "C-STORE-RQ"; break;
-        case C.COMMAND_C_FIND_RSP  : typeName = "C-FIND-RSP"; break;
-        case C.COMMAND_C_MOVE_RQ   : typeName = "C-MOVE-RQ"; break;
-        case C.COMMAND_C_FIND_RQ   : typeName = "C-FIND-RQ"; break;
-        case C.COMMAND_C_STORE_RSP : typeName = "C-STORE-RSP"; break;
-      }      
+        case C.COMMAND_C_GET_RSP:
+          typeName = "C-GET-RSP";
+          break;
+        case C.COMMAND_C_MOVE_RSP:
+          typeName = "C-MOVE-RSP";
+          break;
+        case C.COMMAND_C_GET_RQ:
+          typeName = "C-GET-RQ";
+          break;
+        case C.COMMAND_C_STORE_RQ:
+          typeName = "C-STORE-RQ";
+          break;
+        case C.COMMAND_C_FIND_RSP:
+          typeName = "C-FIND-RSP";
+          break;
+        case C.COMMAND_C_MOVE_RQ:
+          typeName = "C-MOVE-RQ";
+          break;
+        case C.COMMAND_C_FIND_RQ:
+          typeName = "C-FIND-RQ";
+          break;
+        case C.COMMAND_C_STORE_RSP:
+          typeName = "C-STORE-RSP";
+          break;
+      }
     }
     typeName += " [\n";
     typeName += this.printElements(this.elementPairs, 0);
@@ -199,7 +215,8 @@ export class DicomMessage {
   walkObject(pairs) {
     let obj = {};
     for (var tag in pairs) {
-      let v = pairs[tag].getValue(), u = v;
+      let v = pairs[tag].getValue(),
+        u = v;
       if (v instanceof Array) {
         u = [];
         for (let a of v) {
@@ -219,13 +236,15 @@ export class DicomMessage {
   }
 }
 
-export function readMessage(stream, type, syntax) {
-  let elements = [], pairs = {}, useSyntax = type == C.DATA_TYPE_COMMAND ? C.IMPLICIT_LITTLE_ENDIAN : syntax;
+function readMessage(stream, type, syntax) {
+  let elements = [],
+    pairs = {},
+    useSyntax = type == C.DATA_TYPE_COMMAND ? C.IMPLICIT_LITTLE_ENDIAN : syntax;
   stream.reset();
   while (!stream.end()) {
     let elem = new D.DataElement();
     elem.setSyntax(useSyntax);
-    elem.readBytes(stream);//return;
+    elem.readBytes(stream); //return;
     pairs[elem.tag.value] = elem;
   }
 
@@ -234,11 +253,21 @@ export function readMessage(stream, type, syntax) {
     let cmdType = pairs[0x00000100].value;
 
     switch (cmdType) {
-      case 0x8020 : message = new CFindRSP(useSyntax); break;
-      case 0x8021 : message = new CMoveRSP(useSyntax); break;
-      case 0x8010 : message = new CGetRSP(useSyntax); break;
-      case 0x0001 : message = new CStoreRQ(useSyntax); break;
-      default : throw "Unrecognized command type " + cmdType.toString(16); break;
+      case 0x8020:
+        message = new CFindRSP(useSyntax);
+        break;
+      case 0x8021:
+        message = new CMoveRSP(useSyntax);
+        break;
+      case 0x8010:
+        message = new CGetRSP(useSyntax);
+        break;
+      case 0x0001:
+        message = new CStoreRQ(useSyntax);
+        break;
+      default:
+        throw "Unrecognized command type " + cmdType.toString(16);
+        break;
     }
 
     message.setElementPairs(pairs);
@@ -258,7 +287,7 @@ export function readMessage(stream, type, syntax) {
   return message;
 }
 
-export class DataSetMessage extends DicomMessage {
+class DataSetMessage extends DicomMessage {
   constructor(syntax) {
     super(syntax);
     this.type = C.DATA_TYPE_DATA;
@@ -269,20 +298,20 @@ export class DataSetMessage extends DicomMessage {
   }
 }
 
-export class CommandMessage extends DicomMessage {
+class CommandMessage extends DicomMessage {
   constructor(syntax) {
     super(syntax);
     this.type = C.DATA_TYPE_COMMAND;
     this.priority = C.PRIORITY_MEDIUM;
-    this.dataSetPresent = true;    
-  }  
+    this.dataSetPresent = true;
+  }
 
   getFields() {
     return this.command(super.getFields());
-  }  
+  }
 }
 
-export class CommandResponse extends DicomMessage {
+class CommandResponse extends DicomMessage {
   constructor(syntax) {
     super(syntax);
     this.type = C.DATA_TYPE_COMMAND;
@@ -355,28 +384,28 @@ export class CommandResponse extends DicomMessage {
   }
 }
 
-export class CFindRSP extends CommandResponse {
+class CFindRSP extends CommandResponse {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x8020;
   }
 }
 
-export class CGetRSP extends CommandResponse {
+class CGetRSP extends CommandResponse {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x8010;
   }
 }
 
-export class CMoveRSP extends CommandResponse {
+class CMoveRSP extends CommandResponse {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x8021;
-  }  
+  }
 }
 
-export class CFindRQ extends CommandMessage {
+class CFindRQ extends CommandMessage {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x20;
@@ -384,7 +413,7 @@ export class CFindRQ extends CommandMessage {
   }
 }
 
-export class CMoveRQ extends CommandMessage {
+class CMoveRQ extends CommandMessage {
   constructor(syntax, destination) {
     super(syntax);
     this.commandType = 0x21;
@@ -394,16 +423,16 @@ export class CMoveRQ extends CommandMessage {
 
   setStore(cstr) {
     this.store = cstr;
-  }  
+  }
 
   setDestination(dest) {
     this.setElements({
-      0x00000600 : dest
-    });    
+      0x00000600: dest
+    });
   }
 }
 
-export class CGetRQ extends CommandMessage {
+class CGetRQ extends CommandMessage {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x10;
@@ -416,7 +445,7 @@ export class CGetRQ extends CommandMessage {
   }
 }
 
-export class CStoreRQ extends CommandMessage {
+class CStoreRQ extends CommandMessage {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x01;
@@ -436,7 +465,7 @@ export class CStoreRQ extends CommandMessage {
   }
 }
 
-export class CStoreRSP extends CommandResponse {
+class CStoreRSP extends CommandResponse {
   constructor(syntax) {
     super(syntax);
     this.commandType = 0x8001;
@@ -446,9 +475,25 @@ export class CStoreRSP extends CommandResponse {
 
   setAffectedSOPInstanceUID(uid) {
     this.setElement(0x00001000, uid);
-  }  
+  }
 
   getAffectedSOPInstanceUID(uid) {
     return this.getValue(0x00001000);
-  } 
+  }
 }
+
+module.exports = {
+  DicomMessage,
+  readMessage,
+  DataSetMessage,
+  CommandMessage,
+  CommandResponse,
+  CFindRSP,
+  CGetRSP,
+  CMoveRSP,
+  CStoreRSP,
+  CFindRQ,
+  CMoveRQ,
+  CGetRQ,
+  CStoreRQ
+};

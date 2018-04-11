@@ -1,8 +1,9 @@
-import * as F from './Field';
+const F = require('./Field');
 
 function paddingLeft(paddingValue, string) {
-   return String(paddingValue + string).slice(-paddingValue.length);
-};
+  return String(paddingValue + string).slice(-paddingValue.length);
+}
+;
 
 function rtrim(str) {
   return str.replace(/\s*$/g, '');
@@ -16,9 +17,10 @@ function fieldsLength(fields) {
   let length = 0;
   for (let field of fields) {
     length += field.length();
-  }    
+  }
   return length;
-};
+}
+;
 
 class Tag {
   constructor(value) {
@@ -26,8 +28,8 @@ class Tag {
   }
 
   toString() {
-    return "(" + paddingLeft("0000", this.group().toString(16)) + "," + 
-           paddingLeft("0000", this.element().toString(16)) + ")";
+    return "(" + paddingLeft("0000", this.group().toString(16)) + "," +
+      paddingLeft("0000", this.element().toString(16)) + ")";
   }
 
   is(t) {
@@ -48,14 +50,14 @@ function tagFromNumbers(group, element) {
 }
 
 function readTag(stream) {
-  let group = stream.read(C.TYPE_UINT16), 
-      element = stream.read(C.TYPE_UINT16);
+  let group = stream.read(C.TYPE_UINT16),
+    element = stream.read(C.TYPE_UINT16);
 
   let tag = tagFromNumbers(group, element);
   return tag;
 }
 
-export function parseElements(stream, syntax) {
+function parseElements(stream, syntax) {
   let pairs = {};
   stream.reset();
   while (!stream.end()) {
@@ -67,7 +69,7 @@ export function parseElements(stream, syntax) {
   return pairs;
 }
 
-export class ValueRepresentation {
+class ValueRepresentation {
   constructor(type) {
     this.type = type;
     this.multi = false;
@@ -94,7 +96,7 @@ export class ValueRepresentation {
     if (stream.read(C.TYPE_UINT8) != 0) {
       stream.increment(-1);
       str += stream.read(C.TYPE_ASCII, 1);
-    }    
+    }
     return str;
   }
 
@@ -103,14 +105,16 @@ export class ValueRepresentation {
     if (this.checkLength) {
       valid = this.checkLength(fields);
     } else if (this.maxCharLength) {
-      let check = this.maxCharLength, length = 0;
+      let check = this.maxCharLength,
+        length = 0;
       for (let field of fields) {
         if (typeof field.value == 'string')
           length += field.value.length;
       }
-      valid = length <= check; 
+      valid = length <= check;
     } else if (this.maxLength) {
-      let check = this.maxLength, length = fieldsLength(fields);
+      let check = this.maxLength,
+        length = fieldsLength(fields);
       valid = length <= check;
     }
     if (!valid)
@@ -122,7 +126,7 @@ export class ValueRepresentation {
       fields.push(new F.HexField(this.padByte));
     }
 
-    for (let i = 0;i < fields.length;i++) {
+    for (let i = 0; i < fields.length; i++) {
       if (fields[i].isNumeric() && (fields[i].value === "" || fields[i].value === null)) {
         fields[i] = new F.StringField("");
       }
@@ -132,7 +136,7 @@ export class ValueRepresentation {
   }
 }
 
-export class ApplicationEntity extends ValueRepresentation {
+class ApplicationEntity extends ValueRepresentation {
   constructor() {
     super("AE");
     this.maxLength = 16;
@@ -141,14 +145,14 @@ export class ApplicationEntity extends ValueRepresentation {
 
   readBytes(stream, length) {
     return stream.read(C.TYPE_ASCII, length).trim();
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.FilledField(value, 16)]);
   }
 }
 
-export class CodeString extends ValueRepresentation {
+class CodeString extends ValueRepresentation {
   constructor() {
     super("CS");
     this.maxLength = 16;
@@ -157,7 +161,7 @@ export class CodeString extends ValueRepresentation {
 
   readBytes(stream, length) {
     let str = this.readNullPaddedString(stream, length);
-    return str.trim();    
+    return str.trim();
   }
 
   getFields(value) {
@@ -165,7 +169,7 @@ export class CodeString extends ValueRepresentation {
   }
 }
 
-export class AgeString extends ValueRepresentation {
+class AgeString extends ValueRepresentation {
   constructor() {
     super("AS");
     this.maxLength = 4;
@@ -191,7 +195,7 @@ export class AgeString extends ValueRepresentation {
   }
 }
 
-export class AttributeTag extends ValueRepresentation {
+class AttributeTag extends ValueRepresentation {
   constructor() {
     super("AT");
     this.maxLength = 4;
@@ -200,7 +204,8 @@ export class AttributeTag extends ValueRepresentation {
   }
 
   readBytes(stream, length) {
-    let group = stream.read(C.TYPE_UINT16), element = stream.read(C.TYPE_UINT16);
+    let group = stream.read(C.TYPE_UINT16),
+      element = stream.read(C.TYPE_UINT16);
     return tagFromNumbers(group, element);
   }
 
@@ -209,7 +214,7 @@ export class AttributeTag extends ValueRepresentation {
   }
 }
 
-export class DateValue extends ValueRepresentation {
+class DateValue extends ValueRepresentation {
   constructor() {
     super("DA");
     this.maxLength = 8;
@@ -221,16 +226,18 @@ export class DateValue extends ValueRepresentation {
   readBytes(stream, length) {
     let datestr = stream.read(C.TYPE_ASCII, 8);
 
-    let year = parseInt(datestr.substring(0,4)), 
-        month = parseInt(datestr.substring(4,6)), 
-        day = parseInt(datestr.substring(6,8));
+    let year = parseInt(datestr.substring(0, 4)),
+      month = parseInt(datestr.substring(4, 6)),
+      day = parseInt(datestr.substring(6, 8));
     return new Date(year, month, day);
   }
 
   getFields(date) {
     let str = null;
     if (typeof date == 'object') {
-      let year = date.getFullYear(), month = paddingLeft("00", date.getMonth()), day = paddingLeft("00", date.getDate());
+      let year = date.getFullYear(),
+        month = paddingLeft("00", date.getMonth()),
+        day = paddingLeft("00", date.getDate());
       str = year + month + day;
     } else {
       str = date;
@@ -240,7 +247,7 @@ export class DateValue extends ValueRepresentation {
   }
 }
 
-export class DecimalString extends ValueRepresentation {
+class DecimalString extends ValueRepresentation {
   constructor() {
     super("DS");
     this.maxLength = 16;
@@ -257,7 +264,7 @@ export class DecimalString extends ValueRepresentation {
   }
 }
 
-export class DateTime extends ValueRepresentation {
+class DateTime extends ValueRepresentation {
   constructor() {
     super("DT");
     this.maxLength = 26;
@@ -265,16 +272,19 @@ export class DateTime extends ValueRepresentation {
   }
 
   getFields(value) {
-    let year = date.getUTCFullYear(), month = paddingLeft("00", date.getUTCMonth()), 
-        day = paddingLeft("00", date.getUTCDate()), hour = paddingLeft("00", date.getUTCHours()),
-        minute = paddingLeft("00", date.getUTCMinutes()), second = paddingLeft("00", date.getUTCSeconds()),
-        millisecond = paddingLeft("000", date.getUTCMilliseconds());
+    let year = date.getUTCFullYear(),
+      month = paddingLeft("00", date.getUTCMonth()),
+      day = paddingLeft("00", date.getUTCDate()),
+      hour = paddingLeft("00", date.getUTCHours()),
+      minute = paddingLeft("00", date.getUTCMinutes()),
+      second = paddingLeft("00", date.getUTCSeconds()),
+      millisecond = paddingLeft("000", date.getUTCMilliseconds());
 
     return super.getFields([new F.StringField(year + month + day + hour + minute + second + "." + millisecond + "+0000")]);
   }
 }
 
-export class FloatingPointSingle extends ValueRepresentation {
+class FloatingPointSingle extends ValueRepresentation {
   constructor() {
     super("FL");
     this.maxLength = 4;
@@ -292,7 +302,7 @@ export class FloatingPointSingle extends ValueRepresentation {
   }
 }
 
-export class FloatingPointDouble extends ValueRepresentation {
+class FloatingPointDouble extends ValueRepresentation {
   constructor() {
     super("FD");
     this.maxLength = 8;
@@ -303,14 +313,14 @@ export class FloatingPointDouble extends ValueRepresentation {
 
   readBytes(stream, length) {
     return stream.read(C.TYPE_DOUBLE);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.DoubleField(value)]);
   }
 }
 
-export class IntegerString extends ValueRepresentation {
+class IntegerString extends ValueRepresentation {
   constructor() {
     super("IS");
     this.maxLength = 12;
@@ -327,7 +337,7 @@ export class IntegerString extends ValueRepresentation {
   }
 }
 
-export class LongString extends ValueRepresentation {
+class LongString extends ValueRepresentation {
   constructor() {
     super("LO");
     this.maxCharLength = 64;
@@ -337,14 +347,14 @@ export class LongString extends ValueRepresentation {
   readBytes(stream, length) {
     let str = this.readNullPaddedString(stream, length);
     return str.trim();
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class LongText extends ValueRepresentation {
+class LongText extends ValueRepresentation {
   constructor() {
     super("LT");
     this.maxCharLength = 10240;
@@ -354,14 +364,14 @@ export class LongText extends ValueRepresentation {
   readBytes(stream, length) {
     let str = this.readNullPaddedString(stream, length);
     return rtrim(str);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class PersonName extends ValueRepresentation {
+class PersonName extends ValueRepresentation {
   constructor() {
     super("PN");
     this.maxLength = null;
@@ -386,17 +396,20 @@ export class PersonName extends ValueRepresentation {
     if (typeof value == 'string') {
       str = value;
     } else {
-      let fName = value.family || "", gName = value.given || "", 
-          middle = value.middle || "", prefix = value.prefix || "", suffix = value.suffix || "";
+      let fName = value.family || "",
+        gName = value.given || "",
+        middle = value.middle || "",
+        prefix = value.prefix || "",
+        suffix = value.suffix || "";
 
-      str = [fName, gName, middle, prefix, suffix].join("^");      
+      str = [fName, gName, middle, prefix, suffix].join("^");
     }
 
     return super.getFields([new F.StringField(str)]);
   }
 }
 
-export class ShortString extends ValueRepresentation {
+class ShortString extends ValueRepresentation {
   constructor() {
     super("SH");
     this.maxCharLength = 16;
@@ -406,14 +419,14 @@ export class ShortString extends ValueRepresentation {
   readBytes(stream, length) {
     let str = this.readNullPaddedString(stream, length);
     return str.trim();
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class SignedLong extends ValueRepresentation {
+class SignedLong extends ValueRepresentation {
   constructor() {
     super("SL");
     this.maxLength = 4;
@@ -431,7 +444,7 @@ export class SignedLong extends ValueRepresentation {
   }
 }
 
-export class SequenceOfItems extends ValueRepresentation {
+class SequenceOfItems extends ValueRepresentation {
   constructor() {
     super("SQ");
     this.maxLength = null;
@@ -442,10 +455,13 @@ export class SequenceOfItems extends ValueRepresentation {
     if (sqlength == 0x0) {
       return []; //contains no dataset
     } else {
-      let undefLength = sqlength == 0xffffffff, elements = [], read = 0;
+      let undefLength = sqlength == 0xffffffff,
+        elements = [],
+        read = 0;
 
       while (true) {
-        let tag = readTag(stream), length = null;
+        let tag = readTag(stream),
+          length = null;
         read += 4;
 
         if (tag.is(0xfffee0dd)) {
@@ -456,7 +472,9 @@ export class SequenceOfItems extends ValueRepresentation {
         } else if (tag.is(0xfffee000)) {
           length = stream.read(C.TYPE_UINT32);
           read += 4;
-          let itemStream = null, toRead = 0, undef = length == 0xffffffff;
+          let itemStream = null,
+            toRead = 0,
+            undef = length == 0xffffffff;
 
           if (undef) {
             let stack = 0;
@@ -489,8 +507,8 @@ export class SequenceOfItems extends ValueRepresentation {
           }
 
           if (toRead) {
-            stream.increment(undef ? (-toRead-8) : -toRead);
-            itemStream = stream.more(toRead);//parseElements
+            stream.increment(undef ? (-toRead - 8) : -toRead);
+            itemStream = stream.more(toRead); //parseElements
             read += toRead;
             if (undef)
               stream.increment(8);
@@ -521,13 +539,13 @@ export class SequenceOfItems extends ValueRepresentation {
     }
     fields.push(new F.UInt16Field(0xfffe));
     fields.push(new F.UInt16Field(0xe0dd));
-    fields.push(new F.UInt32Field(0x00000000));    
+    fields.push(new F.UInt32Field(0x00000000));
 
     return super.getFields(fields);
   }
 }
 
-export class SignedShort extends ValueRepresentation {
+class SignedShort extends ValueRepresentation {
   constructor() {
     super("SS");
     this.maxLength = 2;
@@ -545,7 +563,7 @@ export class SignedShort extends ValueRepresentation {
   }
 }
 
-export class ShortText extends ValueRepresentation {
+class ShortText extends ValueRepresentation {
   constructor() {
     super("ST");
     this.maxCharLength = 1024;
@@ -562,7 +580,7 @@ export class ShortText extends ValueRepresentation {
   }
 }
 
-export class TimeValue extends ValueRepresentation {
+class TimeValue extends ValueRepresentation {
   constructor() {
     super("TM");
     this.maxLength = 14;
@@ -571,17 +589,18 @@ export class TimeValue extends ValueRepresentation {
 
   readBytes(stream, length) {
     return rtrim(stream.read(C.TYPE_ASCII, length));
-  }  
+  }
 
   getFields(date) {
     let hour = paddingLeft("00", date.getHours()),
-        minute = paddingLeft("00", date.getMinutes()), second = paddingLeft("00", date.getSeconds()),
-        millisecond = paddingLeft("000", date.getMilliseconds());
+      minute = paddingLeft("00", date.getMinutes()),
+      second = paddingLeft("00", date.getSeconds()),
+      millisecond = paddingLeft("000", date.getMilliseconds());
     return super.getFields([new F.StringField(hour + minute + second + "." + millisecond)]);
   }
 }
 
-export class UnlimitedCharacters extends ValueRepresentation {
+class UnlimitedCharacters extends ValueRepresentation {
   constructor() {
     super("UC");
     this.maxLength = null;
@@ -591,14 +610,14 @@ export class UnlimitedCharacters extends ValueRepresentation {
 
   readBytes(stream, length) {
     return rtrim(stream.read(C.TYPE_ASCII, length));
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class UnlimitedText extends ValueRepresentation {
+class UnlimitedText extends ValueRepresentation {
   constructor() {
     super("UT");
     this.maxLength = null;
@@ -607,14 +626,14 @@ export class UnlimitedText extends ValueRepresentation {
 
   readBytes(stream, length) {
     return this.readNullPaddedString(stream, length);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class UnsignedShort extends ValueRepresentation {
+class UnsignedShort extends ValueRepresentation {
   constructor() {
     super("US");
     this.maxLength = 2;
@@ -632,7 +651,7 @@ export class UnsignedShort extends ValueRepresentation {
   }
 }
 
-export class UnsignedLong extends ValueRepresentation {
+class UnsignedLong extends ValueRepresentation {
   constructor() {
     super("UL");
     this.maxLength = 4;
@@ -643,14 +662,14 @@ export class UnsignedLong extends ValueRepresentation {
 
   readBytes(stream, length) {
     return stream.read(C.TYPE_UINT32);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.UInt32Field(value)]);
   }
 }
 
-export class UniqueIdentifier extends ValueRepresentation {
+class UniqueIdentifier extends ValueRepresentation {
   constructor() {
     super("UI");
     this.maxLength = 64;
@@ -659,14 +678,14 @@ export class UniqueIdentifier extends ValueRepresentation {
 
   readBytes(stream, length) {
     return this.readNullPaddedString(stream, length);
-  }   
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class UniversalResource extends ValueRepresentation {
+class UniversalResource extends ValueRepresentation {
   constructor() {
     super("UR");
     this.maxLength = null;
@@ -682,7 +701,7 @@ export class UniversalResource extends ValueRepresentation {
   }
 }
 
-export class UnknownValue extends ValueRepresentation {
+class UnknownValue extends ValueRepresentation {
   constructor() {
     super("UN");
     this.maxLength = null;
@@ -691,14 +710,14 @@ export class UnknownValue extends ValueRepresentation {
 
   readBytes(stream, length) {
     return stream.read(C.TYPE_ASCII, length);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
   }
 }
 
-export class OtherWordString extends ValueRepresentation {
+class OtherWordString extends ValueRepresentation {
   constructor() {
     super("OW");
     this.maxLength = null;
@@ -707,15 +726,16 @@ export class OtherWordString extends ValueRepresentation {
 
   readBytes(stream, length) {
     return stream.read(C.TYPE_ASCII, length);
-  }  
+  }
 
   getFields(value) {
     return super.getFields([new F.StringField(value)]);
-  }  
+  }
 }
 
-export function elementByType(type, value, syntax) {
-  let elem = null, nk = DicomElements.dicomNDict[type];
+function elementByType(type, value, syntax) {
+  let elem = null,
+    nk = DicomElements.dicomNDict[type];
   if (nk) {
     if (nk.vr == 'SQ') {
       let sq = [];
@@ -736,7 +756,7 @@ export function elementByType(type, value, syntax) {
   return elem;
 }
 
-export function elementDataByTag(tag) {
+function elementDataByTag(tag) {
   let nk = DicomElements.dicomNDict[tag];
   if (nk) {
     return nk;
@@ -744,66 +764,97 @@ export function elementDataByTag(tag) {
   throw ("Unrecognized tag " + (tag >>> 0).toString(16));
 }
 
-export function elementKeywordByTag(tag) {
+function elementKeywordByTag(tag) {
   let nk = elementDataByTag(tag);
   return nk.keyword;
 }
 
-export function vrByType(type) {
+function vrByType(type) {
   let vr = null;
-  if (type == "AE") vr = new ApplicationEntity();
-  else if (type == "AS") vr = new AgeString();
-  else if (type == "AT") vr = new AttributeTag();
-  else if (type == "CS") vr = new CodeString();
-  else if (type == "DA") vr = new DateValue();
-  else if (type == "DS") vr = new DecimalString();
-  else if (type == "DT") vr = new DateTime();
-  else if (type == "FL") vr = new FloatingPointSingle();
-  else if (type == "FD") vr = new FloatingPointDouble();
-  else if (type == "IS") vr = new IntegerString();
-  else if (type == "LO") vr = new LongString();
-  else if (type == "LT") vr = new LongText();
-  else if (type == "OB") vr = new OtherByteString();
-  else if (type == "OD") vr = new OtherDoubleString();
-  else if (type == "OF") vr = new OtherFloatString();
-  else if (type == "OW") vr = new OtherWordString();
-  else if (type == "PN") vr = new PersonName();
-  else if (type == "SH") vr = new ShortString();
-  else if (type == "SL") vr = new SignedLong();
-  else if (type == "SQ") vr = new SequenceOfItems();
-  else if (type == "SS") vr = new SignedShort();
-  else if (type == "ST") vr = new ShortText();
-  else if (type == "TM") vr = new TimeValue();
-  else if (type == "UC") vr = new UnlimitedCharacters();
-  else if (type == "UI") vr = new UniqueIdentifier();
-  else if (type == "UL") vr = new UnsignedLong();
-  else if (type == "UN") vr = new UnknownValue();
-  else if (type == "UR") vr = new UniversalResource();
-  else if (type == "US") vr = new UnsignedShort();
-  else if (type == "UT") vr = new UnlimitedText();
-  else throw "Invalid vr type " + type;
+  if (type == "AE")
+    vr = new ApplicationEntity();
+  else if (type == "AS")
+    vr = new AgeString();
+  else if (type == "AT")
+    vr = new AttributeTag();
+  else if (type == "CS")
+    vr = new CodeString();
+  else if (type == "DA")
+    vr = new DateValue();
+  else if (type == "DS")
+    vr = new DecimalString();
+  else if (type == "DT")
+    vr = new DateTime();
+  else if (type == "FL")
+    vr = new FloatingPointSingle();
+  else if (type == "FD")
+    vr = new FloatingPointDouble();
+  else if (type == "IS")
+    vr = new IntegerString();
+  else if (type == "LO")
+    vr = new LongString();
+  else if (type == "LT")
+    vr = new LongText();
+  else if (type == "OB")
+    vr = new OtherByteString();
+  else if (type == "OD")
+    vr = new OtherDoubleString();
+  else if (type == "OF")
+    vr = new OtherFloatString();
+  else if (type == "OW")
+    vr = new OtherWordString();
+  else if (type == "PN")
+    vr = new PersonName();
+  else if (type == "SH")
+    vr = new ShortString();
+  else if (type == "SL")
+    vr = new SignedLong();
+  else if (type == "SQ")
+    vr = new SequenceOfItems();
+  else if (type == "SS")
+    vr = new SignedShort();
+  else if (type == "ST")
+    vr = new ShortText();
+  else if (type == "TM")
+    vr = new TimeValue();
+  else if (type == "UC")
+    vr = new UnlimitedCharacters();
+  else if (type == "UI")
+    vr = new UniqueIdentifier();
+  else if (type == "UL")
+    vr = new UnsignedLong();
+  else if (type == "UN")
+    vr = new UnknownValue();
+  else if (type == "UR")
+    vr = new UniversalResource();
+  else if (type == "US")
+    vr = new UnsignedShort();
+  else if (type == "UT")
+    vr = new UnlimitedText();
+  else
+    throw "Invalid vr type " + type;
 
   return vr;
 }
 
-export function readElements(stream, syntax) {
+function readElements(stream, syntax) {
   if (stream.end()) return false;
 
   let oldEndian = stream.endian;
   stream.setEndian(this.endian);
 
-  let group = stream.read(C.TYPE_UINT16), 
-      element = stream.read(C.TYPE_UINT16),
-      tag = new Tag((group << 16) | element),
-      length = stream.read(C.TYPE_UINT32);
+  let group = stream.read(C.TYPE_UINT16),
+    element = stream.read(C.TYPE_UINT16),
+    tag = new Tag((group << 16) | element),
+    length = stream.read(C.TYPE_UINT32);
   console.log(tag.toString(), length);
   stream.setEndian(oldEndian);
 }
 
-let explicitVRList = ["OB", "OW", "OF", "SQ", "UC", "UR", "UT", "UN"], 
-    binaryVRs = ["FL", "FD", "SL", "SS", "UL", "US"];
+let explicitVRList = ["OB", "OW", "OF", "SQ", "UC", "UR", "UT", "UN"],
+  binaryVRs = ["FL", "FD", "SL", "SS", "UL", "US"];
 
-export class DataElement {
+class DataElement {
   constructor(tag, vr, vm, value, vvr, syntax) {
     this.vr = vr ? vrByType(vr) : null;
     this.tag = !vvr ? new Tag(tag) : tag;
@@ -833,13 +884,24 @@ export class DataElement {
 
   getVMNum() {
     let num = 1;
-    switch(this.vm) {
-      case C.VM_SINGLE : num = 1; break;
-      case C.VM_TWO : num = 2; break;
-      case C.VM_THREE : num = 3; break;
-      case C.VM_FOUR : num = 4; break;
-      case C.VM_16 : num = 16; break;
-      default : break;
+    switch (this.vm) {
+      case C.VM_SINGLE:
+        num = 1;
+        break;
+      case C.VM_TWO:
+        num = 2;
+        break;
+      case C.VM_THREE:
+        num = 3;
+        break;
+      case C.VM_FOUR:
+        num = 4;
+        break;
+      case C.VM_16:
+        num = 16;
+        break;
+      default:
+        break;
     }
     return num;
   }
@@ -857,12 +919,14 @@ export class DataElement {
     let oldEndian = stream.endian;
     stream.setEndian(this.endian);
 
-    let group = stream.read(C.TYPE_UINT16), 
-        element = stream.read(C.TYPE_UINT16),
-        tag = tagFromNumbers(group, element);
+    let group = stream.read(C.TYPE_UINT16),
+      element = stream.read(C.TYPE_UINT16),
+      tag = tagFromNumbers(group, element);
 
-    let length = null, vr = null, edata = elementDataByTag(tag.value),
-        vm = edata.vm;
+    let length = null,
+      vr = null,
+      edata = elementDataByTag(tag.value),
+      vm = edata.vm;
 
     if (this.implicit) {
       length = stream.read(C.TYPE_UINT32);
@@ -881,7 +945,8 @@ export class DataElement {
     this.tag = tag;
     this.vm = vm;
     if (this.isBinaryNumber() && length > this.vr.maxLength) {
-      let times = length / this.vr.maxLength, i = 0;
+      let times = length / this.vr.maxLength,
+        i = 0;
       this.value = [];
       while (i++ < times) {
         this.value.push(this.vr.read(stream, this.vr.maxLength));
@@ -906,8 +971,10 @@ export class DataElement {
   }
 
   getFields() {
-    let fields = [new F.UInt16Field(this.tag.group()), new F.UInt16Field(this.tag.element())], 
-        valueFields = this.vr.getFields(this.value, this.syntax), valueLength = fieldsLength(valueFields), vrType = this.vr.type;    
+    let fields = [new F.UInt16Field(this.tag.group()), new F.UInt16Field(this.tag.element())],
+      valueFields = this.vr.getFields(this.value, this.syntax),
+      valueLength = fieldsLength(valueFields),
+      vrType = this.vr.type;
 
     if (vrType == "SQ") {
       valueLength = 0xffffffff;
@@ -920,7 +987,7 @@ export class DataElement {
         fields.push(new F.StringField(vrType), new F.ReservedField(2), new F.UInt32Field(valueLength));
       } else {
         fields.push(new F.StringField(vrType), new F.UInt16Field(valueLength));
-      } 
+      }
     }
 
     fields = fields.concat(valueFields);
@@ -928,3 +995,40 @@ export class DataElement {
   }
 }
 
+module.exports = {
+  parseElements,
+  ValueRepresentation,
+  ApplicationEntity,
+  CodeString,
+  AgeString,
+  AttributeTag,
+  DateValue,
+  DecimalString,
+  DateTime,
+  FloatingPointSingle,
+  FloatingPointDouble,
+  IntegerString,
+  LongString,
+  LongText,
+  PersonName,
+  ShortString,
+  SignedLong,
+  SequenceOfItems,
+  SignedShort,
+  ShortText,
+  TimeValue,
+  UnlimitedCharacters,
+  UnlimitedText,
+  UnsignedShort,
+  UnsignedLong,
+  UniqueIdentifier,
+  UniversalResource,
+  UnknownValue,
+  OtherWordString,
+  elementByType,
+  elementDataByTag,
+  elementKeywordByTag,
+  vrByType,
+  readElements,
+  DataElement
+};

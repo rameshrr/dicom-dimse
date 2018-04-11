@@ -1,8 +1,8 @@
-import { WriteStream as WriteStream } from './RWStream';
-import * as F from './Field';
-import {readMessage as readMessage} from './Message';
+const {WriteStream} = require('./RWStream');
+const F = require('./Field');
+const {readMessage} = require('./Message');
 
-export class PDU {
+class PDU {
   constructor() {
     this.fields = [];
     this.lengthBytes = 4;
@@ -27,7 +27,7 @@ export class PDU {
       fields.unshift(new F.ReservedField());
       fields.unshift(new F.HexField(this.type));
     }
-      
+
     return fields;
   }
 
@@ -39,7 +39,7 @@ export class PDU {
     } else {
       throw "Invalid length bytes";
     }
-  }  
+  }
 
   read(stream) {
     stream.read(C.TYPE_HEX, 1);
@@ -53,10 +53,11 @@ export class PDU {
 
   loadPDV(stream, length) {
     if (stream.end()) return false;
-    let bytesRead = 0, pdvs = [];
+    let bytesRead = 0,
+      pdvs = [];
     while (bytesRead < length) {
-      let plength = stream.read(C.TYPE_UINT32), 
-          pdv = new PresentationDataValueItem();
+      let plength = stream.read(C.TYPE_UINT32),
+        pdv = new PresentationDataValueItem();
       pdv.readBytes(stream, plength);
       bytesRead += plength + 4;
 
@@ -72,8 +73,8 @@ export class PDU {
   }
 
   stream() {
-    let stream = new WriteStream(), 
-        fields = this.getFields();
+    let stream = new WriteStream(),
+      fields = this.getFields();
 
     // writing to buffer
     for (let field of fields) {
@@ -92,9 +93,12 @@ function interpretCommand(stream, isLast) {
   parseDicomMessage(stream);
 }
 
-export function mergePDVs(pdvs) {
-  let merges = [], count = pdvs.length, i = 0;
-  while (i < count) {console.log(pdvs[i].isLast, pdvs[i].type);
+function mergePDVs(pdvs) {
+  let merges = [],
+    count = pdvs.length,
+    i = 0;
+  while (i < count) {
+    console.log(pdvs[i].isLast, pdvs[i].type);
     if (!pdvs[i].isLast) {
       let j = i;
       while (!pdvs[j++].isLast && j < count) {
@@ -109,24 +113,50 @@ export function mergePDVs(pdvs) {
   return merges;
 }
 
-export function pduByStream(stream) {
+function pduByStream(stream) {
   if (stream.end()) return null;
 
-  let pduType = stream.read(C.TYPE_HEX, 1), typeNum = parseInt(pduType, 16), pdu = null;
+  let pduType = stream.read(C.TYPE_HEX, 1),
+    typeNum = parseInt(pduType, 16),
+    pdu = null;
   //console.log("RECEIVED PDU-TYPE ", pduType);
   switch (typeNum) {
-    case 0x02 : pdu = new AssociateAC(); break;
-    case 0x04 : pdu = new PDataTF(); break;
-    case 0x06 : pdu = new ReleaseRP(); break;
-    case 0x07 : pdu = new AssociateAbort(); break;
-    case 0x10 : pdu = new ApplicationContextItem(); break;
-    case 0x21 : pdu = new PresentationContextItem(); break;
-    case 0x40 : pdu = new TransferSyntaxItem(); break;
-    case 0x50 : pdu = new UserInformationItem(); break;
-    case 0x51 : pdu = new MaximumLengthItem(); break;
-    case 0x52 : pdu = new ImplementationClassUIDItem(); break;
-    case 0x55 : pdu = new ImplementationVersionNameItem(); break;
-    default : throw "Unrecoginized pdu type " + pduType; break;
+    case 0x02:
+      pdu = new AssociateAC();
+      break;
+    case 0x04:
+      pdu = new PDataTF();
+      break;
+    case 0x06:
+      pdu = new ReleaseRP();
+      break;
+    case 0x07:
+      pdu = new AssociateAbort();
+      break;
+    case 0x10:
+      pdu = new ApplicationContextItem();
+      break;
+    case 0x21:
+      pdu = new PresentationContextItem();
+      break;
+    case 0x40:
+      pdu = new TransferSyntaxItem();
+      break;
+    case 0x50:
+      pdu = new UserInformationItem();
+      break;
+    case 0x51:
+      pdu = new MaximumLengthItem();
+      break;
+    case 0x52:
+      pdu = new ImplementationClassUIDItem();
+      break;
+    case 0x55:
+      pdu = new ImplementationVersionNameItem();
+      break;
+    default:
+      throw "Unrecoginized pdu type " + pduType;
+      break;
   }
   if (pdu)
     pdu.read(stream);
@@ -142,11 +172,11 @@ function nextItemIs(stream, pduType) {
   return pduType == nextType;
 }
 
-export class AssociateRQ extends PDU {
+class AssociateRQ extends PDU {
   constructor() {
+    super();
     this.type = C.ITEM_TYPE_PDU_ASSOCIATE_RQ;
     this.protocolVersion = 1;
-    super();
   }
 
   setProtocolVersion(version) {
@@ -198,13 +228,13 @@ export class AssociateRQ extends PDU {
   }
 }
 
-export class AssociateAC extends AssociateRQ {
+class AssociateAC extends AssociateRQ {
   readBytes(stream, length) {
     this.type = C.ITEM_TYPE_PDU_ASSOCIATE_AC;
     let version = stream.read(C.TYPE_UINT16);
     this.setProtocolVersion(version);
     stream.increment(66);
-    
+
     let appContext = this.load(stream);
     this.setApplicationContextItem(appContext);
 
@@ -219,13 +249,13 @@ export class AssociateAC extends AssociateRQ {
   }
 }
 
-export class AssociateAbort extends PDU {
+class AssociateAbort extends PDU {
   constructor() {
+    super();
     this.type = C.ITEM_TYPE_PDU_AABORT;
     this.source = 1;
     this.reason = 0;
-    super();
-  }  
+  }
 
   setSource(src) {
     this.source = src;
@@ -247,28 +277,28 @@ export class AssociateAbort extends PDU {
 
   getFields() {
     return super.getFields([
-      new F.ReservedField(), new F.ReservedField(), 
+      new F.ReservedField(), new F.ReservedField(),
       new F.UInt8Field(this.source), new F.UInt8Field(this.reason)
     ]);
   }
 }
 
-export class ReleaseRQ extends PDU {
+class ReleaseRQ extends PDU {
   constructor() {
-    this.type = C.ITEM_TYPE_PDU_RELEASE_RQ;
     super();
-  }  
+    this.type = C.ITEM_TYPE_PDU_RELEASE_RQ;
+  }
 
   getFields() {
     return super.getFields([new F.ReservedField(4)]);
   }
 }
 
-export class ReleaseRP extends PDU {
+class ReleaseRP extends PDU {
   constructor() {
-    this.type = C.ITEM_TYPE_PDU_RELEASE_RP;
     super();
-  }  
+    this.type = C.ITEM_TYPE_PDU_RELEASE_RP;
+  }
 
   readBytes(stream, length) {
     stream.increment(4);
@@ -279,11 +309,11 @@ export class ReleaseRP extends PDU {
   }
 }
 
-export class PDataTF extends PDU {
+class PDataTF extends PDU {
   constructor() {
+    super();
     this.type = C.ITEM_TYPE_PDU_PDATA;
     this.presentationDataValueItems = [];
-    super();
   }
 
   setPresentationDataValueItems(items) {
@@ -304,7 +334,7 @@ export class PDataTF extends PDU {
   }
 }
 
-export class Item extends PDU {
+class Item extends PDU {
   constructor() {
     super();
     this.lengthBytes = 2;
@@ -314,21 +344,21 @@ export class Item extends PDU {
     stream.read(C.TYPE_HEX, 1);
     let length = stream.read(C.TYPE_UINT16);
     this.readBytes(stream, length);
-  }  
+  }
 
   write(stream) {
     stream.concat(this.stream());
   }
 }
 
-export class PresentationDataValueItem extends Item {
+class PresentationDataValueItem extends Item {
   constructor(context) {
+    super();
     this.type = null;
     this.isLast = true;
     this.dataFragment = null;
     this.contextId = context;
     this.messageStream = null;
-    super();
 
     this.lengthBytes = 4;
   }
@@ -358,7 +388,7 @@ export class PresentationDataValueItem extends Item {
     let messageHeader = stream.read(C.TYPE_UINT8);
     this.isLast = messageHeader >> 1;
     this.type = messageHeader & 1 ? C.DATA_TYPE_COMMAND : C.DATA_TYPE_DATA;
- //console.log(stream.offset, length);
+    //console.log(stream.offset, length);
     //load dicom messages
     this.messageStream = stream.more(length - 2);
   }
@@ -372,14 +402,14 @@ export class PresentationDataValueItem extends Item {
     fields.push(this.dataFragment);
 
     return super.getFields(fields);
-  }  
+  }
 }
 
-export class ApplicationContextItem extends Item {
+class ApplicationContextItem extends Item {
   constructor() {
+    super();
     this.type = C.ITEM_TYPE_APPLICATION_CONTEXT;
     this.applicationContextName = C.APPLICATION_CONTEXT_NAME;
-    super();
   }
 
   setApplicationContextName(name) {
@@ -400,10 +430,10 @@ export class ApplicationContextItem extends Item {
   }
 }
 
-export class PresentationContextItem extends Item {
+class PresentationContextItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_PRESENTATION_CONTEXT;
     super();
+    this.type = C.ITEM_TYPE_PRESENTATION_CONTEXT;
   }
 
   setPresentationContextID(id) {
@@ -440,13 +470,13 @@ export class PresentationContextItem extends Item {
 
   getFields() {
     let f = [
-      new F.UInt8Field(this.presentationContextID), 
+      new F.UInt8Field(this.presentationContextID),
       new F.ReservedField(), new F.ReservedField(), new F.ReservedField(), this.abstractSyntaxItem
     ];
     for (let syntaxItem of this.transferSyntaxesItems) {
       f.push(syntaxItem);
-    }  
-    return super.getFields(f);  
+    }
+    return super.getFields(f);
   }
 
   buffer() {
@@ -454,10 +484,10 @@ export class PresentationContextItem extends Item {
   }
 }
 
-export class AbstractSyntaxItem extends Item {
+class AbstractSyntaxItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_ABSTRACT_CONTEXT;
     super();
+    this.type = C.ITEM_TYPE_ABSTRACT_CONTEXT;
   }
 
   setAbstractSyntaxName(name) {
@@ -466,17 +496,17 @@ export class AbstractSyntaxItem extends Item {
 
   getFields() {
     return super.getFields([new F.StringField(this.abstractSyntaxName)]);
-  }  
+  }
 
   buffer() {
     return super.buffer();
   }
 }
 
-export class TransferSyntaxItem extends Item {
+class TransferSyntaxItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_TRANSFER_CONTEXT;
     super();
+    this.type = C.ITEM_TYPE_TRANSFER_CONTEXT;
   }
 
   setTransferSyntaxName(name) {
@@ -497,10 +527,10 @@ export class TransferSyntaxItem extends Item {
   }
 }
 
-export class UserInformationItem extends Item {
+class UserInformationItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_USER_INFORMATION;
     super();
+    this.type = C.ITEM_TYPE_USER_INFORMATION;
   }
 
   setUserDataItems(items) {
@@ -508,7 +538,8 @@ export class UserInformationItem extends Item {
   }
 
   readBytes(stream, length) {
-    let items = [], pdu = this.load(stream);
+    let items = [],
+      pdu = this.load(stream);
 
     do {
       items.push(pdu);
@@ -529,10 +560,10 @@ export class UserInformationItem extends Item {
   }
 }
 
-export class ImplementationClassUIDItem extends Item {
+class ImplementationClassUIDItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_IMPLEMENTATION_UID;
     super();
+    this.type = C.ITEM_TYPE_IMPLEMENTATION_UID;
   }
 
   setImplementationClassUID(id) {
@@ -553,10 +584,10 @@ export class ImplementationClassUIDItem extends Item {
   }
 }
 
-export class ImplementationVersionNameItem extends Item {
+class ImplementationVersionNameItem extends Item {
   constructor() {
-    this.type = C.ITEM_TYPE_IMPLEMENTATION_VERSION;
     super();
+    this.type = C.ITEM_TYPE_IMPLEMENTATION_VERSION;
   }
 
   setImplementationVersionName(name) {
@@ -577,11 +608,11 @@ export class ImplementationVersionNameItem extends Item {
   }
 }
 
-export class MaximumLengthItem extends Item {
+class MaximumLengthItem extends Item {
   constructor() {
+    super();
     this.type = C.ITEM_TYPE_MAXIMUM_LENGTH;
     this.maximumLengthReceived = 32768;
-    super();
   }
 
   setMaximumLengthReceived(length) {
@@ -589,7 +620,7 @@ export class MaximumLengthItem extends Item {
   }
 
   readBytes(stream, length) {
-    let length = stream.read(C.TYPE_UINT32);
+    length = stream.read(C.TYPE_UINT32);
     this.setMaximumLengthReceived(length);
   }
 
@@ -602,3 +633,25 @@ export class MaximumLengthItem extends Item {
   }
 }
 
+module.exports = {
+  PDU,
+  interpretCommand,
+  mergePDVs,
+  pduByStream,
+  AssociateRQ,
+  AssociateAC,
+  AssociateAbort,
+  ReleaseRP,
+  ReleaseRP,
+  PDataTF,
+  Item,
+  PresentationDataValueItem,
+  ApplicationContextItem,
+  PresentationContextItem,
+  AbstractSyntaxItem,
+  TransferSyntaxItem,
+  UserInformationItem,
+  ImplementationClassUIDItem,
+  ImplementationVersionNameItem,
+  MaximumLengthItem
+}

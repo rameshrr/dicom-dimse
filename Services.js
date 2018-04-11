@@ -1,7 +1,7 @@
-import {PDataTF as PDataTF, PresentationDataValueItem as PresentationDataValueItem} from './PDU'
-import * as M from './Message'
+const {PDataTF, PresentationDataValueItem} = require('./PDU');
+const M = require('./Message');
 
-export class DimseService {
+class DimseService {
   constructor(conn) {
     this.connection = conn;
     this.params = {};
@@ -39,7 +39,7 @@ export class DimseService {
       datasetMessage = new M.DataSetMessage();
       datasetMessage.setElements(dataset);
     }
-    
+
     this.connection.sendMessage(command, datasetMessage, listener, this);
   }
 
@@ -47,8 +47,8 @@ export class DimseService {
     let o = this;
     this.associate(function(ac) {
       o.sendMessage(message, params, callback);
-      //this.close();
-    });    
+    //this.close();
+    });
   }
 
   close() {
@@ -56,7 +56,7 @@ export class DimseService {
   }
 }
 
-export class CFind extends DimseService {
+class CFind extends DimseService {
   constructor(conn) {
     super(conn);
     this.setContextId(C.SOP_STUDY_ROOT_FIND);
@@ -64,11 +64,11 @@ export class CFind extends DimseService {
 
   retrieveStudies(params, callback) {
     let sendParams = Object.assign({
-      0x00080052 : C.QUERY_RETRIEVE_LEVEL_STUDY,
-      0x00080020 : "",
-      0x00100010 : "",
-      0x00080061 : "",
-      0x0020000D : ""
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_STUDY,
+      0x00080020: "",
+      0x00100010: "",
+      0x00080061: "",
+      0x0020000D: ""
     }, params);
 
     this.send(sendParams, callback);
@@ -76,25 +76,26 @@ export class CFind extends DimseService {
 
   retrieveInstances(params, callback) {
     let sendParams = Object.assign({
-      0x00080052 : C.QUERY_RETRIEVE_LEVEL_IMAGE,
-      0x00080020 : "",
-      0x00080018 : "",
-      0x00080016 : ""
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_IMAGE,
+      0x00080020: "",
+      0x00080018: "",
+      0x00080016: ""
     }, params);
 
     this.send(sendParams, callback);
-  };
+  }
+  ;
 
   retrieveHangingProtocol(params, callback) {
     this.setContextId(C.SOP_HANGING_PROTOCOL_FIND);
     params = Object.assign({
-      0x00080018 : "",
-      0x00720020 : "",
-      0x0072000C : "",
-      0x00720102 : "",
-      0x00720100 : "",
-      0x00720200 : ""
-    }, params);//[{0x00080060 : "", 0x00200060 : ""}]
+      0x00080018: "",
+      0x00720020: "",
+      0x0072000C: "",
+      0x00720102: "",
+      0x00720100: "",
+      0x00720200: ""
+    }, params); //[{0x00080060 : "", 0x00200060 : ""}]
 
     this.send(params, callback);
   }
@@ -104,7 +105,7 @@ export class CFind extends DimseService {
   }
 }
 
-export class CMove extends DimseService {
+class CMove extends DimseService {
   constructor(conn, cstr) {
     super(conn);
     this.setContextId(C.SOP_STUDY_ROOT_MOVE);
@@ -122,11 +123,11 @@ export class CMove extends DimseService {
 
   retrieveStudy(studyId, params, callback) {
     let sendParams = Object.assign({
-      0x00080052 : C.QUERY_RETRIEVE_LEVEL_STUDY,
-      0x00080020 : "",
-      0x00100010 : "",
-      0x00080061 : "",
-      0x0020000D : studyId
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_STUDY,
+      0x00080020: "",
+      0x00100010: "",
+      0x00080061: "",
+      0x0020000D: studyId
     }, params);
 
     this.send(sendParams, callback);
@@ -140,10 +141,10 @@ export class CMove extends DimseService {
       getrq.setDestination(this.destination);
 
     super.send(getrq, params, callback);
-  }  
+  }
 }
 
-export class CGet extends DimseService {
+class CGet extends DimseService {
   constructor(conn, cstr) {
     super(conn);
     this.setContextId(C.SOP_STUDY_ROOT_GET);
@@ -156,11 +157,11 @@ export class CGet extends DimseService {
 
   retrieveStudy(studyId, params, callback) {
     let sendParams = Object.assign({
-      0x00080052 : C.QUERY_RETRIEVE_LEVEL_STUDY,
-      0x00080020 : "",
-      0x00100010 : "",
-      0x00080061 : "",
-      0x0020000D : studyId
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_STUDY,
+      0x00080020: "",
+      0x00100010: "",
+      0x00080061: "",
+      0x0020000D: studyId
     }, params);
 
     this.send(sendParams, callback);
@@ -168,14 +169,14 @@ export class CGet extends DimseService {
 
   retrieveInstance(instanceId, params, callback) {
     let sendParams = Object.assign({
-      0x00080052 : C.QUERY_RETRIEVE_LEVEL_IMAGE,
-      0x00080020 : "",
-      0x00100010 : "",
-      0x00080061 : "",
-      0x00080018 : instanceId
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_IMAGE,
+      0x00080020: "",
+      0x00100010: "",
+      0x00080061: "",
+      0x00080018: instanceId
     }, params);
 
-    this.send(sendParams, callback);    
+    this.send(sendParams, callback);
   }
 
   send(params, callback) {
@@ -184,10 +185,10 @@ export class CGet extends DimseService {
       getrq.setStore(this.storeService);
 
     super.send(getrq, params, callback);
-  }  
+  }
 }
 
-export class CStore extends DimseService {
+class CStore extends DimseService {
   constructor(conn, context) {
     super(conn);
     this.setContextId(context);
@@ -200,9 +201,18 @@ export class CStore extends DimseService {
   }
 }
 
-export class MRImageStorage extends DimseService {
+class MRImageStorage extends DimseService {
   constructor(conn) {
     super(conn);
     this.setContextId(C.SOP_MR_IMAGE_STORAGE);
   }
+}
+
+module.exports = {
+  DimseService,
+  CFind,
+  CMove,
+  CGet,
+  CStore,
+  MRImageStorage
 }

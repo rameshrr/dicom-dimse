@@ -1,6 +1,6 @@
-import { calcLength as calcLength } from './RWStream';
+const {calcLength} = require('./RWStream');
 
-export class Field {
+class Field {
   constructor(type, value) {
     this.type = type;
     this.value = value;
@@ -19,13 +19,13 @@ export class Field {
   }
 }
 
-export class StringField extends Field {
+class StringField extends Field {
   constructor(str) {
     super(C.TYPE_ASCII, str);
   }
 }
 
-export class FilledField extends Field {
+class FilledField extends Field {
   constructor(value, length) {
     super(C.TYPE_COMPOSITE, value);
     this.fillLength = length;
@@ -46,99 +46,115 @@ export class FilledField extends Field {
       stream.write(C.TYPE_ASCII, this.value);
     } else {
       throw "Length mismatch";
-    }    
+    }
   }
 }
 
-export class HexField extends Field {
+class HexField extends Field {
   constructor(hex) {
     super(C.TYPE_HEX, hex);
   }
 }
 
-export class ReservedField extends Field {
+class ReservedField extends Field {
   constructor(length) {
     length = length || 1;
     super(C.TYPE_HEX, "00".repeat(length));
   }
 }
 
-export class UInt8Field extends Field {
+class UInt8Field extends Field {
   constructor(value) {
     super(C.TYPE_UINT8, value);
   }
 
   isNumeric() {
     return true;
-  }  
+  }
 }
 
-export class UInt16Field extends Field {
+class UInt16Field extends Field {
   constructor(value) {
     super(C.TYPE_UINT16, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
 }
 
-export class UInt32Field extends Field {
+class UInt32Field extends Field {
   constructor(value) {
     super(C.TYPE_UINT32, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
 }
 
-export class Int8Field extends Field {
+class Int8Field extends Field {
   constructor(value) {
     super(C.TYPE_INT8, value);
   }
 
   isNumeric() {
     return true;
-  } 
+  }
 }
 
-export class Int16Field extends Field {
+class Int16Field extends Field {
   constructor(value) {
     super(C.TYPE_INT16, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
 }
 
-export class Int32Field extends Field {
+class Int32Field extends Field {
   constructor(value) {
     super(C.TYPE_INT32, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
 }
 
-export class FloatField extends Field {
+class FloatField extends Field {
   constructor(value) {
     super(C.TYPE_FLOAT, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
 }
 
-export class DoubleField extends Field {
+class DoubleField extends Field {
   constructor(value) {
     super(C.TYPE_DOUBLE, value);
   }
 
   isNumeric() {
     return true;
-  }   
+  }
+}
+
+module.exports = {
+  Field,
+  StringField,
+  FilledField,
+  HexField,
+  ReservedField,
+  UInt8Field,
+  UInt16Field,
+  UInt32Field,
+  Int8Field,
+  Int16Field,
+  Int32Field,
+  FloatField,
+  DoubleField
 }
