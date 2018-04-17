@@ -201,6 +201,12 @@ class DicomMessage {
         case C.COMMAND_C_FIND_RQ:
           typeName = "C-FIND-RQ";
           break;
+        case C.COMMAND_C_ECHO_RQ:
+          typeName = "C-ECHO-RQ";
+          break;
+        case C.COMMAND_C_ECHO_RSP:
+          typeName = "C-ECHO-RSP";
+          break;
         case C.COMMAND_C_STORE_RSP:
           typeName = "C-STORE-RSP";
           break;
@@ -244,7 +250,8 @@ function readMessage(stream, type, syntax) {
   while (!stream.end()) {
     let elem = new D.DataElement();
     elem.setSyntax(useSyntax);
-    elem.readBytes(stream); //return;
+    //elem.readBytes(stream); //return;
+    try { elem.readBytes(stream); } catch (err) { }
     pairs[elem.tag.value] = elem;
   }
 
@@ -264,6 +271,9 @@ function readMessage(stream, type, syntax) {
         break;
       case 0x0001:
         message = new CStoreRQ(useSyntax);
+        break;
+      case 0x8030:
+        message = new CEchoRSP(useSyntax);
         break;
       default:
         throw "Unrecognized command type " + cmdType.toString(16);
@@ -445,6 +455,23 @@ class CGetRQ extends CommandMessage {
   }
 }
 
+class CEchoRQ extends CommandMessage {
+  constructor(syntax) {
+    super(syntax);
+    this.commandType = 0x0030;
+    this.contextUID = C.SOP_VERIFICATION;
+    this.dataSetPresent = false;
+  }
+}
+
+class CEchoRSP extends CommandResponse {
+  constructor(syntax) {
+    super(syntax);
+    this.commandType = 0x8030;
+    this.contextUID = C.SOP_VERIFICATION;
+  }
+}
+
 class CStoreRQ extends CommandMessage {
   constructor(syntax) {
     super(syntax);
@@ -495,5 +522,7 @@ module.exports = {
   CFindRQ,
   CMoveRQ,
   CGetRQ,
+  CEchoRQ,
+  CEchoRSP,
   CStoreRQ
 };
