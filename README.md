@@ -1,6 +1,6 @@
 Thanks to OHIF DICOM DIMSE. Little improved version of original version.
 
-DIMSE in ES6
+Nodejs implementation of DIMSE(part104) - Alpha stage
 ============
 
 This is a library that implements dimse tcp protocol in ecmascript 6, it's still in development stage, current supported service include C-ECHO, C-GET, C-FIND, C-STORE.
