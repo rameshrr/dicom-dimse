@@ -1,6 +1,5 @@
-const { PDataTF, PresentationDataValueItem } = require('./PDU');
+const {PDataTF, PresentationDataValueItem} = require('./PDU');
 const M = require('./Message');
-const C = require('./constants');
 
 class DimseService {
   constructor(conn) {
@@ -46,9 +45,9 @@ class DimseService {
 
   send(message, params, callback) {
     let o = this;
-    this.associate(function (ac) {
+    this.associate(function(ac) {
       o.sendMessage(message, params, callback);
-      //this.close();
+    //this.close();
     });
   }
 
@@ -202,17 +201,6 @@ class CStore extends DimseService {
   }
 }
 
-class CEcho extends DimseService {
-  constructor(conn) {
-    super(conn);
-    this.setContextId(C.SOP_VERIFICATION);
-  }
-
-  doEcho(callback) {
-    this.send(new M.CEchoRQ(), null, callback);
-  }
-}
-
 class MRImageStorage extends DimseService {
   constructor(conn) {
     super(conn);
@@ -226,6 +214,5 @@ module.exports = {
   CMove,
   CGet,
   CStore,
-  CEcho,
   MRImageStorage
 }

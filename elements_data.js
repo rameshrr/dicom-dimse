@@ -1,5 +1,4 @@
 var dicomNDict = {
-  0x00020010 : { vr : "UL", vm : C.VM_SINGLE, keyword : "LengthToEnd"},
   0x00080001 : { vr : "UL", vm : C.VM_SINGLE, keyword : "LengthToEnd"},
   0x00080005 : { vr : "CS", vm : C.VM_1N, keyword : "SpecificCharacterSet"},
   0x00080006 : { vr : "SQ", vm : C.VM_SINGLE, keyword : "LanguageCodeSequence"},
