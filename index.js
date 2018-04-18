@@ -17,13 +17,17 @@ class DicomDimseServices {
       sourceAE: config.sourceAE || 'DICOMDIMSE'
     });
 
-    client.connect(function () {
+    client.connect(() => {
       const cEcho = new Services.CEcho();
       this.addService(cEcho);
 
       cEcho.doEcho([0, (result) => {
-        return callback(null, result.getStatus() == C.STATUS_SUCCESS, result);
+        callback(null, result.getStatus() == C.STATUS_SUCCESS, result);
       }]);
+    });
+
+    client.on('error', (err) => {
+      callback(err, false);
     });
   }
 }
