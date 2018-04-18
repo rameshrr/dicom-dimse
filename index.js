@@ -17,7 +17,7 @@ class DicomDimseServices {
       sourceAE: config.sourceAE || 'DICOMDIMSE'
     });
 
-    client.connect(() => {
+    client.connect(function () {
       const cEcho = new Services.CEcho();
       this.addService(cEcho);
 
@@ -26,8 +26,8 @@ class DicomDimseServices {
       }]);
     });
 
-    client.on('error', (err) => {
-      callback(err, false);
+    client.on('error', function (err) {
+      callback(null, false, err);
     });
   }
 }

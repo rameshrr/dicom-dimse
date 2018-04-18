@@ -5,12 +5,24 @@ Nodejs implementation of DIMSE(part104) - Alpha stage
 
 This is a library that implements dimse tcp protocol in ecmascript 6, it's still in development stage, current supported service include C-ECHO, C-GET, C-FIND, C-STORE.
 
-Examples
+# Installation
+install via [NPM](https://www.npmjs.com/):
+> npm install dicom-dimse
+
+# Usage
+### Initializing:
+```javascript
+
+const DicomDimseServices = require('dicom-dimse');
+
+```
+
+# Examples
 
 Below it's a example that perform C-ECHO.
 
 ```
-    const DicomDimseServices = require('./');
+    const DicomDimseServices = require('dicom-dimse');
 
     const services = new DicomDimseServices('192.168.1.1', 4242);
 
@@ -35,3 +47,6 @@ above code will output:
 ```
 
 More examples will follow..
+   
+# Issues 
+Please file your issues [here](https://github.com/rameshrr/dicom-dimse/issues):
