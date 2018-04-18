@@ -22,7 +22,6 @@ class DicomDimseServices {
       this.addService(cEcho);
 
       cEcho.doEcho([0, (result) => {
-        client.destroy();
         callback(null, result.getStatus() == C.STATUS_SUCCESS, result);
       }]);
     });

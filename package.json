@@ -1,6 +1,6 @@
 {
   "name": "dicom-dimse",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "DICOM DIMSE(part 104) implementation in NodeJS",
   "main": "index.js",
   "directories": {
