@@ -642,7 +642,7 @@ module.exports = {
   AssociateAC,
   AssociateAbort,
   ReleaseRP,
-  ReleaseRP,
+  ReleaseRQ,
   PDataTF,
   Item,
   PresentationDataValueItem,

@@ -22,11 +22,13 @@ class DicomDimseServices {
       this.addService(cEcho);
 
       cEcho.doEcho([0, (result) => {
+        client.destroy();
         callback(null, result.getStatus() == C.STATUS_SUCCESS, result);
       }]);
     });
 
     client.on('error', function (err) {
+      client.destroy();
       callback(null, false, err);
     });
   }
