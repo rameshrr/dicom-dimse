@@ -63,6 +63,40 @@ class CFind extends DimseService {
     this.setContextId(C.SOP_STUDY_ROOT_FIND);
   }
 
+  retrieve(queryLevel, params, callback) {
+
+    if ([C.QUERY_RETRIEVE_LEVEL_STUDY, C.QUERY_RETRIEVE_LEVEL_SERIES, C.QUERY_RETRIEVE_LEVEL_IMAGE].indexOf(queryLevel) == -1) {
+      return callback(new Error('Invalid Query level. Level can be any one of these STUDY/SERIES/IMAGE'));
+    }
+
+    let reqParams = {};
+
+    if (queryLevel == C.QUERY_RETRIEVE_LEVEL_STUDY) {
+      reqParams = {
+        0x00080020: "",
+        0x00100010: "",
+        0x00100020: "",
+        0x00100030: "",
+        0x00080061: "",
+        0x0020000D: ""
+      };
+    } else if (queryLevel == C.QUERY_RETRIEVE_LEVEL_SERIES) {
+      reqParams = {
+        0x0020000E: ""
+      };
+    } else {
+      reqParams = {
+        0x00080020: "",
+        0x00080018: "",
+        0x00080016: ""
+      };
+    }
+
+    let sendParams = Object.assign({ 0x00080052: queryLevel }, reqParams, params);
+
+    this.send(sendParams, callback);
+  }
+
   retrieveStudies(params, callback) {
     let sendParams = Object.assign({
       0x00080052: C.QUERY_RETRIEVE_LEVEL_STUDY,
@@ -70,6 +104,17 @@ class CFind extends DimseService {
       0x00100010: "",
       0x00080061: "",
       0x0020000D: ""
+    }, params);
+
+    this.send(sendParams, callback);
+  }
+
+  retrieveSeries(params, callback) {
+    let sendParams = Object.assign({
+      0x00080052: C.QUERY_RETRIEVE_LEVEL_SERIES,
+      0x00080020: "",
+      0x00080018: "",
+      0x00080016: ""
     }, params);
 
     this.send(sendParams, callback);
@@ -85,7 +130,6 @@ class CFind extends DimseService {
 
     this.send(sendParams, callback);
   }
-  ;
 
   retrieveHangingProtocol(params, callback) {
     this.setContextId(C.SOP_HANGING_PROTOCOL_FIND);

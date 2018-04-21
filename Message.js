@@ -251,6 +251,7 @@ function readMessage(stream, type, syntax) {
     let elem = new D.DataElement();
     elem.setSyntax(useSyntax);
     //elem.readBytes(stream); //return;
+    /// TODO:: having issues with reading SQ
     try { elem.readBytes(stream); } catch (err) { }
     pairs[elem.tag.value] = elem;
   }
