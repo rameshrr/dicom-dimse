@@ -22,7 +22,10 @@ class DicomDimseServices {
       this.addService(cEcho);
 
       cEcho.doEcho([0, (result) => {
-        callback(null, result.getStatus() == C.STATUS_SUCCESS, result);
+        this.release();
+
+        let dcmInfo = DicomDimseServices.parseDicomTags(result.elementPairs);
+        callback(null, result.getStatus() == C.STATUS_SUCCESS, dcmInfo);
       }]);
     });
 
