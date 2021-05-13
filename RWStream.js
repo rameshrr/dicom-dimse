@@ -72,7 +72,7 @@ class WriteStream extends RWStream {
   constructor() {
     super();
     this.defaultBufferSize = 512; //512 bytes
-    this.rawBuffer = new Buffer(this.defaultBufferSize);
+    this.rawBuffer = Buffer.alloc(this.defaultBufferSize);
     this.offset = 0;
     this.contentSize = 0;
   }
@@ -96,7 +96,7 @@ class WriteStream extends RWStream {
     if (this.offset + length > this.rawBuffer.length) {
       // we need more size, copying old one to new buffer
       let oldLength = this.rawBuffer.length,
-        newBuffer = new Buffer(oldLength + length + (oldLength / 2));
+        newBuffer = Buffer.alloc(oldLength + length + (oldLength / 2));
       this.rawBuffer.copy(newBuffer, 0, 0, this.contentSize);
       this.rawBuffer = newBuffer;
     }

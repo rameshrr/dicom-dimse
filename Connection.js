@@ -76,7 +76,7 @@ class Connection extends require("net").Socket {
   }
 
   idleClose() {
-    console.log('Exceed idle time, closing connection');
+    // console.log('Exceed idle time, closing connection');
     this.release();
   }
 
@@ -85,7 +85,7 @@ class Connection extends require("net").Socket {
   }
 
   ready() {
-    console.log("Connection established");
+    // console.log("Connection established");
     this.connected = true;
     this.started = time();
 
